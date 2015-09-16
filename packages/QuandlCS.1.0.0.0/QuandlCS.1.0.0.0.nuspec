@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>QuandlCS</id>
+    <version>1.0.0.0</version>
+    <title>QuandlCS</title>
+    <authors>HubertJ</authors>
+    <owners>HubertJ</owners>
+    <licenseUrl>https://raw.githubusercontent.com/puzzl3r/QuandlCS/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/puzzl3r/QuandlCS</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A library to wrap the Quandl REST API to allow for querying of Quandl datasets</description>
+    <releaseNotes>Initial nuget package setup</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>quandlcs c#</tags>
+  </metadata>
+</package>
