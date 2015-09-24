@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary1", "ClassLibrary1\ClassLibrary1.csproj", "{4F29DA96-C492-43D9-BE42-A3D20565D631}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuandlGrapher", "ClassLibrary1\QuandlGrapher.csproj", "{4F29DA96-C492-43D9-BE42-A3D20565D631}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
