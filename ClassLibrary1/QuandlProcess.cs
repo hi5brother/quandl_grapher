@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using ExcelDna.Integration;
-using QuandlCS.Requests;
-using QuandlCS.Types;
-using System.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Diagnostics;
-using Microsoft.Office.Interop.Excel;
+using System.Net;
+using ExcelDna.Integration;
 using ExcelDna.ComInterop;
+using QuandlCS.Requests;
+using QuandlCS.Types;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
 
 namespace QuandlProcess
@@ -23,118 +23,37 @@ namespace QuandlProcess
         //
     public class QuandlProcess
     {
-        public ParsedData quandlObject;
-
-        public Boolean InitiateDataset(string quandlDatabase, string datacodeParams, int datapointsNumber)
+        public static ParsedData GrabData(string quandlDatabase, string datacodeParams, int datapointsNumber, string frequency)
         {
-            //create the object with the appropriate parameters
-            this.quandlObject = GrabData(quandlDatabase, datacodeParams, datapointsNumber);
-            return true;
-        }
-        public Boolean ClearDataset()
-        {
-            //delete the current object with the data
-            this.quandlObject.Dispose();
-            return true;
-        }
-
-        public String GetDatatype(string key)
-        {
-            return this.quandlObject.ReturnDataType(key);
-        }
-
-        [return: MarshalAs(UnmanagedType.IDispatch)]
-        public float[] ReturnFloatValues(String param)
-        {
-            return this.quandlObject.ReturnFloatValues(param);
-        }
-
-        [return: MarshalAs(UnmanagedType.IDispatch)]       
-        public String ReturnParamType(String param)
-        {
-            return this.quandlObject.ReturnDataType(param);
-        }
-
-        [return: MarshalAs(UnmanagedType.IDispatch)]
-        public String[] ReturnDates()
-        {
-            return this.quandlObject.ReturnDates();
-        }
-
-        public Double HistoricalVol()
-        {
-            //Move this to another class/file
-            double avgChange = 0;
-            int numOfDays;
-            int numOfIntervals;
-
-            double histVol = 0;
-            double differenceVal;
-            
-            float[] closeData = this.quandlObject.ReturnFloatValues("Close");
-            numOfDays = closeData.Length;
-            numOfIntervals = numOfDays - 1;
-
-            float[] rateOfReturn = new float[numOfIntervals];
-            
-            //First loop to calculate average change
-            for (int i = 0; i < numOfIntervals; i++)
-            {
-                rateOfReturn[i] = (float)Math.Log((double)closeData[i] / closeData[i + 1]);
-                avgChange += rateOfReturn[i];
-            }
-            avgChange = avgChange / numOfIntervals;
-
-            //Second loop to calculate difference between 
-            for (int i = 0; i < numOfIntervals; i++)
-            {
-                differenceVal = (rateOfReturn[i] - avgChange);
-                histVol += differenceVal * differenceVal;
-            }
-            histVol = histVol / (numOfIntervals - 1);
-
-            histVol = Math.Sqrt(histVol);
-
-            //Annualize the volatility
-            histVol = histVol * Math.Sqrt(252);
-
-            return histVol;
-        }
-        public double BrennerEstimate(double callPrice, string dateVal)
-        {
-            //Move this to another class/file
-            double underlying = 100;
-            int expiry = 20; //in days
-            double rate = 0.02;
-
-            double vol;
-
-
-            vol = callPrice / (0.4 * underlying * Math.Exp(-rate * expiry) * Math.Sqrt(expiry));
-
-            return vol;
-
-        }
-        public void FindMax(double timePeriod)
-        {
-            //find max close point in the past ___ time period
-
-        }
-        public void FindMin(double timePeriod)
-        {
-            //find min close point in the past ___ time period
-        }
-        [ExcelFunction(Description="Grab Quandl Data into Lists")]
-        public static ParsedData GrabData(string quandlDatabase, string datacodeParams, int datapointsNumber)
-        {
-            
             //Quandl request
             QuandlDownloadRequest request = new QuandlDownloadRequest();
             request.APIKey = "xNA_rA8KzZepxFUeu9bA";
 
             request.Datacode = new Datacode(quandlDatabase, datacodeParams); // PRAGUESE is the source, PX is the datacode
             request.Format = FileFormats.JSON;
-            request.Frequency = Frequencies.Daily;
+
+            switch (frequency)
+            {
+                case "d":
+                    request.Frequency = Frequencies.Daily;
+                    break;
+                case "w":
+                    request.Frequency = Frequencies.Weekly;
+                    break;
+                case "m":
+                    request.Frequency = Frequencies.Monthly;
+                    break;
+                case "q":
+                    request.Frequency = Frequencies.Quarterly;
+                    break;
+                case "a":
+                    request.Frequency = Frequencies.Annualy;
+                    break;
+                default:
+                    request.Frequency = Frequencies.Daily;
+                    break;
+            }
+            
             request.Truncation = datapointsNumber;
             request.Sort = SortOrders.Descending;
             request.Transformation = Transformations.None;
@@ -180,12 +99,10 @@ namespace QuandlProcess
                     int count = 0;
                     foreach (var val in dataPoint)
                     {
-                        
                         pData.Add(paramList[count], val.ToString());
                         count++;
                     }
                 }
-
                 return pData;
            } 
 
