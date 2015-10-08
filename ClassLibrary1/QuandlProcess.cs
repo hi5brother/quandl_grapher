@@ -14,13 +14,7 @@ using System.Runtime.InteropServices;
 
 namespace QuandlProcess
 {
-    [ComVisible(true)]
-    [ClassInterface(ClassInterfaceType.AutoDispatch)]
-    [ProgId("QuandlProcess")]
-    //Interface with VBA as
-        //Dim lib As Object: Set lib = CreateObject("QuandlProcess")
-        //See: http://mikejuniperhill.blogspot.ca/2014/03/interfacing-c-and-vba-with-exceldna-no.html
-        //
+
     public class QuandlProcess
     {
         public static ParsedData GrabData(string quandlDatabase, string datacodeParams, int datapointsNumber, string frequency)
@@ -59,6 +53,7 @@ namespace QuandlProcess
             request.Transformation = Transformations.None;
 
             //OUTPUT: https://www.quandl.com/api/v1/datasets/PRAGUESE/PX.json?auth_token=xNA_rA8KzZepxFUeu9bA&collapse=monthly&transformation=diff&sort_order=asc&rows=150
+            //https://www.quandl.com/api/v3/datasets/YAHOO/YHOO.json
 
             //Initialize data structure
             ParsedData pData = new ParsedData();
@@ -79,6 +74,8 @@ namespace QuandlProcess
                 }
 
                 //var headings = o["column_names"].Children();
+                pData.dataName = (string)o["name"].ToString();
+
                 var results = o["data"].Children();
 
                 //REWRITE THIS---------------------------
@@ -113,6 +110,7 @@ namespace QuandlProcess
 
         private Dictionary<string, List<string>> internalDictionary = new Dictionary<string, List<string>>();
         private Dictionary<string, string> dataType = new Dictionary<string, string>();
+        public String dataName;
 
         
         public void Add(string key, string value)
@@ -129,6 +127,10 @@ namespace QuandlProcess
                 list.Add(value);
                 this.internalDictionary.Add(key, list);
             }
+        }
+        public string ReturnName()
+        {
+            return this.dataName;
         }
         public List<string> ReturnColumn(string key)
         {

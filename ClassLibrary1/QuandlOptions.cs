@@ -83,7 +83,7 @@ namespace QuandlProcess
             return vol;
 
         }
-        public Double BrennerEstimate2(double callPrice, double expiry, double strike)
+        public static Double BrennerEstimate2(double callPrice, double underlying,double expiry)
         {
             //http://quant.stackexchange.com/a/7763
             //http://www.eecs.harvard.edu/~parkes/cs286r/spring08/reading3/chambers.pdf
@@ -91,25 +91,24 @@ namespace QuandlProcess
             //For at the money 
             double vol;
 
-            vol = Math.Sqrt(2 * Math.PI / expiry) * (callPrice / strike);
+            vol = Math.Sqrt(2 * Math.PI / expiry) * (callPrice / underlying);
 
             return vol;
         }
-        public double IterativePricer(double price, double underlying, double strike, double expiry, double rate)
+        public static double IterativeBS(double price, double underlying, double strike, double expiry, double rate, string cp)
         {
+            //Newton-Ralpson iterative method
 
-            BlackScholes test = new BlackScholes(price, underlying,  strike, expiry, rate);
-            
-            double vol;
-            for (int i = 0; i < 100; i++ )
+            BlackScholes option = new BlackScholes(price, underlying,  strike, expiry, rate, cp);
+
+            do
             {
-                
-                test.CalculateRiskProbabilities();
+                option.CalculateRiskProbabilities();
 
-                vol = test.vol - (test.CalculateOptionValue() - price) / test.CalculateVega() ;
+                option.vol = option.vol - (option.CalculateOptionValue() - price) / option.CalculateVega();
 
-            }
-            return test.vol;
+            } while ((option.CalculateOptionValue() - price) > 0.01);
+            return option.vol;
         }
         struct BlackScholes
         {
@@ -117,6 +116,7 @@ namespace QuandlProcess
             //SEE: http://finance.bi.no/~bernt/gcc_prog/algoritms_v1/algoritms/node8.html
             
             public double optionPrice, underlying, strike, expiry, rate;
+            public string call_put;
             private double d1, d2;
             double sqrtTime;
             public double initVol, vol;
@@ -125,13 +125,15 @@ namespace QuandlProcess
                                 double p_underlying, 
                                 double p_strike, 
                                 double p_expiry, 
-                                double p_rate)
+                                double p_rate,
+                                string p_call_put)
             {
                 optionPrice = p_optionPrice;
                 underlying = p_underlying;
                 strike = p_strike;
                 expiry = p_expiry;      //In Years
                 rate = p_rate;
+                call_put = p_call_put;
                 
                 initVol = BrennerEstimate(optionPrice, expiry, strike);
                 
@@ -146,7 +148,7 @@ namespace QuandlProcess
             }
             public void CalculateRiskProbabilities()
             {
-                d1 = Math.Log(underlying / strike) + expiry * ((rate) + 0.5 * vol * initVol);
+                d1 = Math.Log(underlying / strike) + expiry * ((rate) + 0.5 * vol *vol);
                 d1 = d1 / (vol * sqrtTime);
 
                 d2 = d1 - vol * sqrtTime;
@@ -160,8 +162,12 @@ namespace QuandlProcess
             }
             public double CalculateOptionValue()
             {
-                double value;
-                value = underlying * NDistCumul(d1) * Math.Exp(-expiry) - strike * Math.Exp(-rate * expiry) * NDistCumul(d2);
+                double value = 0;
+                if (call_put == "c")
+                    value = underlying * NDistCumul(d1) - strike * Math.Exp(-rate * expiry) * NDistCumul(d2);
+                else if (call_put == "p")
+                    value = strike * Math.Exp(-rate * expiry) * NDistCumul(-d2) - underlying * NDistCumul(-d1);
+
                 return value;
             }
             private double NDistCumul(double val)
@@ -194,5 +200,6 @@ namespace QuandlProcess
                 return sign * y;
             }
         }
+        
     }
 }

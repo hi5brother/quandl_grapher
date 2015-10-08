@@ -2,13 +2,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
+using System.Diagnostics;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
+using ExcelDna.Integration;
+using ExcelDna.ComInterop;
 
 namespace QuandlProcess
 {
-    class DataAccess
+    [ComVisible(true)]
+    [ClassInterface(ClassInterfaceType.AutoDispatch)]
+    [ProgId("QuandlDataAccess")]
+    //Interface with VBA as
+    //Dim lib As Object: Set lib = CreateObject("QuandlProcess")
+    //See: http://mikejuniperhill.blogspot.ca/2014/03/interfacing-c-and-vba-with-exceldna-no.html
+    //
+    public class DataAccess
     {
         private ParsedData quandlObject;
 
@@ -23,6 +35,10 @@ namespace QuandlProcess
             //delete the current object with the data
             this.quandlObject.Dispose();
             return true;
+        }
+        public String ReturnName()
+        {
+            return this.quandlObject.ReturnName();
         }
 
         public String GetDatatype(string key)
@@ -59,4 +75,5 @@ namespace QuandlProcess
         }
 
     }
+
 }
