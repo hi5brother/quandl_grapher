@@ -48,29 +48,138 @@ namespace QuandlProcess
             chart.ChartType = Excel.XlChartType.xlLine;
 
             var seriesCol = chart.SeriesCollection();
-            var series = seriesCol.NewSeries();
+            
 
             if (this.initiated)
             {
+                //Data points for returns
+                //we splice each array to show only visible values
+                //accounts for the gap left from doing moving averages
+                var series = seriesCol.NewSeries();
+                
                 float[] valArr = data.ReturnFloatValues("Close");
                 Array.Reverse(valArr);
-                series.Values = valArr;
+                float[] visibleValues = new List<float>(valArr).GetRange(12, 88).ToArray();
+                series.Values = visibleValues;
 
                 string[] datesArr = data.ReturnDates();
                 Array.Reverse(datesArr);
-                series.XValues = datesArr;
+                string[] visibleDates = new List<string>(datesArr).GetRange(12, 88).ToArray();
+                series.XValues = visibleDates;
 
                 series.Name = data.ReturnName();
+
+                //moving averages
+                var movingAvgSeries = seriesCol.NewSeries();
+                float[] movingAveragesArr = Analysis.ReturnMovingAverages(valArr, 12);
+
+                movingAvgSeries.Values = movingAveragesArr;
+
+                movingAvgSeries.XValues = visibleDates;
+
+                //bollinger bands
+                var highBBSeries = seriesCol.NewSeries();
+                float[] highBBArr = Analysis.ReturnUpperBollingerBand(valArr, 12);
+
+                highBBSeries.Values = highBBArr;
+
+                highBBSeries.XValues = visibleDates;
+
+                var lowBBSeries = seriesCol.NewSeries();
+                float[] lowBBArr = Analysis.ReturnLowerBollingerBand(valArr, 12);
+
+                lowBBSeries.Values = lowBBArr;
+
+                lowBBSeries.XValues = visibleDates;
+
             }
 
-
         }
+
     }
-    public class TechnicalAnalysis
+    public static class Analysis
     {
-        //public float[] ReturnMovingAverages(float[] values)
-        //public float[] ReturnUpperBollingerBand(float[] values)
-        //public float[] ReturnLowerBollingerBand(float[] values)
+        public static float[] ReturnMovingAverages(float[] values, int days)
+        {
+            //days specify the number of days used in moving average data point
+
+            int i,j;
+            float[] movingAvgArr = new float[values.Length - days];
+            float sum = 0;
+
+            //Go through the first couple of days
+            //No values for moving average!
+            for (i = 0; i < days; i++ )
+            {
+                sum += values[i];
+            }
+            //Calculate for moving averages
+            for (i = 0; i < values.Length - days; i++)
+            {
+                //subtract out the oldest value used in moving average
+                sum = sum - values[i];
+                //add in the new value used in moving average
+                sum = sum + values[i + days];
+
+                movingAvgArr[i] = sum / days;
+            }
+            return movingAvgArr;
+        }
+        public static float[] ReturnUpperBollingerBand(float[] returnValues, int days)
+        {
+            int i;
+            float[] movingAvgArr = ReturnMovingAverages(returnValues, days);
+            float[] stDevArr = ReturnStandardDeviationArray(returnValues, days);
+            float[] BollingerBandArr = new float[movingAvgArr.Length];
+
+            for (i = 0; i<movingAvgArr.Length; i++)
+            {
+                BollingerBandArr[i] = movingAvgArr[i] + 2 * stDevArr[i];
+            }
+            return BollingerBandArr;
+        }
+        public static float[] ReturnLowerBollingerBand(float[] returnValues, int days)
+        {
+            int i;
+            float[] movingAvgArr = ReturnMovingAverages(returnValues, days);
+            float[] stDevArr = ReturnStandardDeviationArray(returnValues, days);
+            float[] BollingerBandArr = new float[movingAvgArr.Length];
+
+            for (i = 0; i<movingAvgArr.Length; i++)
+            {
+                BollingerBandArr[i] = movingAvgArr[i] - 2 * stDevArr[i];
+            }
+            return BollingerBandArr;
+        
+        }
+        private static float[] ReturnStandardDeviationArray(float[] returnValues, int days)
+        {
+            //Return the array of n days standard deviations for a time period 
+            int i,j;
+            float[] StDevArr = new float[returnValues.Length - days];
+            float[] StDevSubset = new float[days];
+
+            for (i = 0; i<StDevArr.Length; i++)
+            {
+                
+                for (j=0; j<days; j++)
+                    StDevSubset[j] = returnValues[j + i];
+
+                StDevArr[i] = StandardDeviation(StDevSubset);
+            }
+            return StDevArr;
+        }
+        private static float StandardDeviation(float[] valuesArr)
+        {
+            float average = valuesArr.Average();
+            float sumOfDeviation = 0;
+            foreach (float value in valuesArr)
+            {
+                sumOfDeviation += (value - average) * (value - average);
+            }
+            float sumOfDeviationAverage = sumOfDeviation / (valuesArr.Length-1);
+            return (float)Math.Sqrt(sumOfDeviationAverage);
+        }
     }
     
 }
